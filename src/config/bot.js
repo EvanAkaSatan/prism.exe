@@ -136,7 +136,7 @@ export const botConfig = {
     },
     footer: {
       // Default footer text used in bot embeds.
-      text: "Titan Bot",
+      text: "prism.exe",
       // Footer icon URL (null = no icon).
       icon: null,
     },
@@ -187,6 +187,109 @@ export const botConfig = {
     // 3600000 = 1 hour.
     robFailJailTime: 3600000, 
   },
+
+  // =========================
+// CLAN / TEAM BATTLE SYSTEM
+// =========================
+teams: {
+  enabled: true,
+
+  // Fixed factions players can join
+  factions: {
+    angels: {
+      name: "Angels",
+      emoji: "🪽",
+      color: "#FFFFFF",
+      bonus: {
+        type: "heal",
+        value: 10,
+      },
+    },
+
+    vampires: {
+      name: "Vampires",
+      emoji: "🦇",
+      color: "#8B0000",
+      bonus: {
+        type: "lifesteal",
+        value: 10,
+      },
+    },
+
+    sirens: {
+      name: "Sirens",
+      emoji: "🌊",
+      color: "#3498DB",
+      bonus: {
+        type: "dodge",
+        value: 10,
+      },
+    },
+  },
+
+  battle: {
+    enabled: true,
+
+    // seconds
+    cooldown: 60,
+
+    // reward for winning
+    winPoints: 10,
+
+    // reward for losing
+    losePoints: 2,
+
+    // cannot attack own faction
+    allowSameTeamBattle: false,
+
+    // random combat stats
+    minDamage: 5,
+    maxDamage: 20,
+
+    startingHP: 100,
+  },
+
+  leaderboard: {
+    enabled: true,
+    updateInterval: 300000,
+  },
+
+  dailyReward: {
+    enabled: true,
+    amount: 25,
+  },
+},
+
+  CREATE TABLE team_players (
+    user_id BIGINT PRIMARY KEY,
+    team VARCHAR(20) NOT NULL,
+    points INTEGER DEFAULT 0,
+    wins INTEGER DEFAULT 0,
+    losses INTEGER DEFAULT 0
+);
+
+CREATE TABLE team_scores (
+    team VARCHAR(20) PRIMARY KEY,
+    total_points INTEGER DEFAULT 0
+);
+
+if (!["angels","vampires","sirens"].includes(team))
+   return error;
+
+if (attacker.team === defender.team) {
+   return interaction.reply(
+      "You cannot fight members of your own faction."
+   );
+};
+
+const winner =
+   Math.random() > 0.5
+      ? attacker
+      : defender;
+
+winner.points +=
+   botConfig.teams.battle.winPoints;
+};
 
   // =========================
   // SHOP SETTINGS
@@ -460,6 +563,7 @@ export const botConfig = {
     utility: true,
     community: true,
     fun: true,
+    teams: true,
   },
 };
 
