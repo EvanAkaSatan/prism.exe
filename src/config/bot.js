@@ -463,6 +463,112 @@ export const botConfig = {
   },
 };
 
+import discord
+from discord.ext import commands
+import sqlite3
+import random
+
+bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
+
+db = sqlite3.connect("game.db")
+cur = db.cursor()
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS players(
+    user_id INTEGER PRIMARY KEY,
+    team TEXT,
+    points INTEGER DEFAULT 0
+)
+""")
+
+TEAMS = ["angels", "vampires", "sirens"]
+
+
+@bot.command()
+async def join(ctx, team):
+
+    team = team.lower()
+
+    if team not in TEAMS:
+        return await ctx.send(
+            "Teams: Angels, Vampires, Sirens"
+        )
+
+    cur.execute(
+        "INSERT OR REPLACE INTO players VALUES (?, ?, COALESCE((SELECT points FROM players WHERE user_id=?),0))",
+        (ctx.author.id, team, ctx.author.id)
+    )
+
+    db.commit()
+
+    await ctx.send(
+        f"{ctx.author.name} joined {team}"
+    )
+
+
+@bot.command()
+async def battle(ctx, opponent: discord.Member):
+
+    cur.execute(
+        "SELECT team, points FROM players WHERE user_id=?",
+        (ctx.author.id,)
+    )
+
+    p1 = cur.fetchone()
+
+    cur.execute(
+        "SELECT team, points FROM players WHERE user_id=?",
+        (opponent.id,)
+    )
+
+    p2 = cur.fetchone()
+
+    if not p1 or not p2:
+        return await ctx.send(
+            "Both players must join teams."
+        )
+
+    if p1[0] == p2[0]:
+        return await ctx.send(
+            "You cannot battle same-team players."
+        )
+
+    winner = random.choice(
+        [ctx.author, opponent]
+    )
+
+    cur.execute(
+        "UPDATE players SET points = points + 10 WHERE user_id=?",
+        (winner.id,)
+    )
+
+    db.commit()
+
+    await ctx.send(
+        f"{winner.name} wins and gains 10 points!"
+    )
+
+
+@bot.command()
+async def profile(ctx):
+
+    cur.execute(
+        "SELECT team, points FROM players WHERE user_id=?",
+        (ctx.author.id,)
+    )
+
+    player = cur.fetchone()
+
+    if not player:
+        return await ctx.send(
+            "No team joined."
+        )
+
+    await ctx.send(
+        f"Team: {player[0]}\nPoints: {player[1]}"
+    )
+
+bot.run("TOKEN")
 
 export function validateConfig(config) {
   const errors = [];
